@@ -6,7 +6,7 @@ import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group"
 import { Button } from "@/components/ui/button"
 import { Sheet, SheetContent, SheetTrigger, SheetTitle, SheetHeader } from "@/components/ui/sheet"
 import type { ItemCategory, ItemStatus } from "@/types"
-import { Filter, Package, BookOpen, Sofa, Shirt, Dumbbell, MoreHorizontal, CheckCircle, Clock, Check, X } from "lucide-react"
+import { Filter, Package, BookOpen, Sofa, Shirt, Dumbbell, MoreHorizontal, CheckCircle, Clock, Check, X, Smartphone } from "lucide-react"
 import { useState, useEffect } from "react"
 
 interface FilterSidebarProps {
@@ -17,20 +17,20 @@ interface FilterSidebarProps {
 }
 
 const categoryOptions = [
-  { value: "all", label: "ทั้งหมด", icon: Package },
-  { value: "electronics", label: "อิเล็กทรอนิกส์", icon: Package },
-  { value: "books", label: "หนังสือ", icon: BookOpen },
-  { value: "furniture", label: "เฟอร์นิเจอร์", icon: Sofa },
-  { value: "clothing", label: "เสื้อผ้า", icon: Shirt },
-  { value: "sports", label: "กีฬา", icon: Dumbbell },
-  { value: "other", label: "อื่นๆ", icon: MoreHorizontal },
+  { value: "all", label: "ทั้งหมด", icon: Package, color: "text-primary" },
+  { value: "electronics", label: "อิเล็กทรอนิกส์", icon: Smartphone, color: "text-blue-500" },
+  { value: "books", label: "หนังสือ", icon: BookOpen, color: "text-amber-500" },
+  { value: "furniture", label: "เฟอร์นิเจอร์", icon: Sofa, color: "text-purple-500" },
+  { value: "clothing", label: "เสื้อผ้า", icon: Shirt, color: "text-pink-500" },
+  { value: "sports", label: "กีฬา", icon: Dumbbell, color: "text-cyan-500" },
+  { value: "other", label: "อื่นๆ", icon: MoreHorizontal, color: "text-orange-500" },
 ]
 
 const statusOptions = [
-  { value: "all", label: "ทั้งหมด", icon: CheckCircle },
-  { value: "available", label: "พร้อมให้", icon: Check },
-  { value: "pending", label: "รอดำเนินการ", icon: Clock },
-  { value: "completed", label: "เสร็จสิ้น", icon: X },
+  { value: "all", label: "ทั้งหมด", icon: CheckCircle, color: "text-primary" },
+  { value: "available", label: "พร้อมให้", icon: Check, color: "text-green-500" },
+  { value: "pending", label: "รอดำเนินการ", icon: Clock, color: "text-amber-500" },
+  { value: "completed", label: "เสร็จสิ้น", icon: X, color: "text-gray-500" },
 ]
 
 function FilterContent({ category, status, onCategoryChange, onStatusChange }: FilterSidebarProps) {
@@ -56,7 +56,7 @@ function FilterContent({ category, status, onCategoryChange, onStatusChange }: F
                   id={`cat-${option.value}`} 
                   className="sr-only"
                 />
-                <Icon className="h-4 w-4 transition-transform duration-200 group-hover:scale-110" />
+                <Icon className={`h-4 w-4 transition-transform duration-200 group-hover:scale-110 ${option.color}`} />
                 <Label 
                   htmlFor={`cat-${option.value}`} 
                   className="flex-1 cursor-pointer text-sm font-medium"
@@ -92,7 +92,7 @@ function FilterContent({ category, status, onCategoryChange, onStatusChange }: F
                   id={`status-${option.value}`}
                   className="sr-only" 
                 />
-                <Icon className="h-4 w-4 transition-transform duration-200 group-hover:scale-110" />
+                <Icon className={`h-4 w-4 transition-transform duration-200 group-hover:scale-110 ${option.color}`} />
                 <Label 
                   htmlFor={`status-${option.value}`} 
                   className="flex-1 cursor-pointer text-sm font-medium"
