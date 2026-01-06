@@ -13,7 +13,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { UnifiedModal, UnifiedModalActions } from "@/components/ui/unified-modal"
 import { useToast } from "@/hooks/use-toast"
 import type { ItemCategory } from "@/types"
-import { X, Loader2, ImagePlus, Package } from 'lucide-react'
+import { X, Loader2, ImagePlus, Package, Smartphone, BookOpen, Sofa, Shirt, Dumbbell, MoreHorizontal } from 'lucide-react'
 import Image from "next/image"
 import { isOnCooldown, getRemainingCooldown, recordAction, loadCooldownFromStorage, formatCooldownTime } from "@/lib/rate-limit"
 
@@ -24,12 +24,12 @@ interface PostItemModalProps {
 }
 
 const categoryOptions = [
-  { value: "electronics", label: "อิเล็กทรอนิกส์", icon: "⚡" },
-  { value: "books", label: "หนังสือ", icon: "📚" },
-  { value: "furniture", label: "เฟอร์นิเจอร์", icon: "🪑" },
-  { value: "clothing", label: "เสื้อผ้า", icon: "👕" },
-  { value: "sports", label: "กีฬา", icon: "⚽" },
-  { value: "other", label: "อื่นๆ", icon: "📦" },
+  { value: "electronics", label: "อิเล็กทรอนิกส์", icon: Smartphone, color: "text-blue-500" },
+  { value: "books", label: "หนังสือ", icon: BookOpen, color: "text-amber-500" },
+  { value: "furniture", label: "เฟอร์นิเจอร์", icon: Sofa, color: "text-purple-500" },
+  { value: "clothing", label: "เสื้อผ้า", icon: Shirt, color: "text-pink-500" },
+  { value: "sports", label: "กีฬา", icon: Dumbbell, color: "text-cyan-500" },
+  { value: "other", label: "อื่นๆ", icon: MoreHorizontal, color: "text-orange-500" },
 ]
 
 const locationOptions = [
@@ -369,14 +369,17 @@ export function PostItemModal({ open, onOpenChange, onSuccess }: PostItemModalPr
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  {categoryOptions.map((option) => (
-                    <SelectItem key={option.value} value={option.value}>
-                      <span className="flex items-center gap-2">
-                        <span>{option.icon}</span>
-                        {option.label}
-                      </span>
-                    </SelectItem>
-                  ))}
+                  {categoryOptions.map((option) => {
+                    const IconComponent = option.icon
+                    return (
+                      <SelectItem key={option.value} value={option.value}>
+                        <span className="flex items-center gap-2">
+                          <IconComponent className={`h-4 w-4 ${option.color}`} />
+                          {option.label}
+                        </span>
+                      </SelectItem>
+                    )
+                  })}
                 </SelectContent>
               </Select>
             </div>
