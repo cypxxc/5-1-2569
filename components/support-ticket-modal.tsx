@@ -80,8 +80,9 @@ export function SupportTicketModal({ open, onOpenChange }: SupportTicketModalPro
       })
 
       // Send LINE notification to all admins (async, don't block)
+      console.log('[LINE] Sending admin notification for new support ticket...')
       try {
-        fetch('/api/line/notify-admin', {
+        const notifyResponse = await fetch('/api/line/notify-admin', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
@@ -90,7 +91,9 @@ export function SupportTicketModal({ open, onOpenChange }: SupportTicketModalPro
             category,
             userEmail: user.email || 'ไม่ระบุ'
           })
-        }).catch(err => console.log('[LINE] Notify admin error:', err))
+        })
+        const notifyResult = await notifyResponse.json()
+        console.log('[LINE] Admin notification result:', notifyResult)
       } catch (lineError) {
         console.log('[LINE] Notify admin error:', lineError)
       }
