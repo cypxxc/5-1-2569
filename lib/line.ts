@@ -133,7 +133,12 @@ export async function sendReplyMessage(
 export async function verifySignature(body: string, signature: string): Promise<boolean> {
   try {
     const channelSecret = getChannelSecret()
-    if (!channelSecret) return false
+    if (!channelSecret) {
+      console.error("[LINE] verifySignature: LINE_CHANNEL_SECRET is not configured!")
+      return false
+    }
+    
+    console.log("[LINE] verifySignature: Verifying with secret (first 5 chars):", channelSecret.substring(0, 5) + "...")
     
     // Use Web Crypto API for Vercel Edge compatibility
     const encoder = new TextEncoder()
@@ -154,7 +159,10 @@ export async function verifySignature(body: string, signature: string): Promise<
     // Convert to base64
     const hash = btoa(String.fromCharCode(...new Uint8Array(signatureBuffer)))
     
-    return hash === signature
+    const isMatch = hash === signature
+    console.log("[LINE] verifySignature: Signature match:", isMatch)
+    
+    return isMatch
   } catch (error) {
     console.error("[LINE] Signature verification error:", error)
     return false

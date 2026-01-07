@@ -105,24 +105,37 @@ async function firestoreUpdate(documentPath: string, fields: Record<string, unkn
 }
 
 export async function POST(request: NextRequest) {
+  console.log("[LINE Webhook] Received request")
+  
   try {
     const body = await request.text()
     const signature = request.headers.get("x-line-signature")
 
+    console.log("[LINE Webhook] Signature present:", !!signature)
+    console.log("[LINE Webhook] Body length:", body.length)
+
     if (!signature) {
+      console.error("[LINE Webhook] Missing signature header")
       return NextResponse.json({ error: "Missing signature" }, { status: 401 })
     }
 
     const isValid = await verifySignature(body, signature)
+    console.log("[LINE Webhook] Signature verification result:", isValid)
+    
     if (!isValid) {
+      console.error("[LINE Webhook] Invalid signature - check LINE_CHANNEL_SECRET env var")
       return NextResponse.json({ error: "Invalid signature" }, { status: 401 })
     }
 
     const data: LineWebhookBody = JSON.parse(body)
+    console.log("[LINE Webhook] Events count:", data.events.length)
 
     for (const event of data.events) {
+      console.log("[LINE Webhook] Processing event:", event.type, "from:", event.source?.userId?.substring(0, 10) + "...")
+      
       if (event.type === "follow") {
-        await sendReplyMessage(event.replyToken, [
+        console.log("[LINE Webhook] Handling follow event")
+        const result = await sendReplyMessage(event.replyToken, [
           {
             type: "text",
             text: `สวัสดี! 👋 ยินดีต้อนรับสู่ RMU Exchange Notification
@@ -131,11 +144,14 @@ export async function POST(request: NextRequest) {
 (ตัวอย่าง: student@rmu.ac.th)`,
           },
         ])
+        console.log("[LINE Webhook] Follow reply result:", result)
       } else if (event.type === "message" && event.message?.type === "text") {
+        console.log("[LINE Webhook] Handling text message:", event.message.text?.substring(0, 30))
         await handleTextMessage(event)
       }
     }
 
+    console.log("[LINE Webhook] Completed successfully")
     return NextResponse.json({ success: true })
   } catch (error) {
     console.error("[LINE Webhook] Error:", error)
