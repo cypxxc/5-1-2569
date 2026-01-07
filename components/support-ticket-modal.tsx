@@ -79,6 +79,22 @@ export function SupportTicketModal({ open, onOpenChange }: SupportTicketModalPro
         description: description.trim(),
       })
 
+      // Send LINE notification to all admins (async, don't block)
+      try {
+        fetch('/api/line/notify-admin', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            type: 'new_support_ticket',
+            subject: subject.trim(),
+            category,
+            userEmail: user.email || 'ไม่ระบุ'
+          })
+        }).catch(err => console.log('[LINE] Notify admin error:', err))
+      } catch (lineError) {
+        console.log('[LINE] Notify admin error:', lineError)
+      }
+
       toast({
         title: "ส่งคำร้องสำเร็จ",
         description: "ทีมงานจะตอบกลับโดยเร็วที่สุด",
