@@ -48,8 +48,9 @@ export async function POST(request: NextRequest) {
     }
 
     const lineUserId = userDoc.fields.lineUserId?.stringValue
-    const notificationsEnabled = userDoc.fields.lineNotifications?.mapValue?.fields?.enabled?.booleanValue
-    const itemNotificationsEnabled = userDoc.fields.lineNotifications?.mapValue?.fields?.itemPosted?.booleanValue ?? true // default to true
+    // Default to true if not explicitly set
+    const notificationsEnabled = userDoc.fields.lineNotifications?.mapValue?.fields?.enabled?.booleanValue ?? true
+    const itemNotificationsEnabled = userDoc.fields.lineNotifications?.mapValue?.fields?.itemPosted?.booleanValue ?? true
 
     console.log("[LINE Notify Item] User LINE status:", { 
       hasLineId: !!lineUserId, 
@@ -57,7 +58,12 @@ export async function POST(request: NextRequest) {
       itemNotificationsEnabled 
     })
 
-    if (!lineUserId || !notificationsEnabled) {
+    if (!lineUserId) {
+      console.log("[LINE Notify Item] User has no LINE linked")
+      return NextResponse.json({ sent: false, reason: "no LINE linked" })
+    }
+    
+    if (!notificationsEnabled) {
       return NextResponse.json({ sent: false, reason: "notifications disabled" })
     }
 

@@ -49,8 +49,9 @@ export async function POST(request: NextRequest) {
     }
 
     const lineUserId = ownerDoc.fields.lineUserId?.stringValue
-    const notificationsEnabled = ownerDoc.fields.lineNotifications?.mapValue?.fields?.enabled?.booleanValue
-    const exchangeRequestEnabled = ownerDoc.fields.lineNotifications?.mapValue?.fields?.exchangeRequest?.booleanValue
+    // Default to true if not explicitly set
+    const notificationsEnabled = ownerDoc.fields.lineNotifications?.mapValue?.fields?.enabled?.booleanValue ?? true
+    const exchangeRequestEnabled = ownerDoc.fields.lineNotifications?.mapValue?.fields?.exchangeRequest?.booleanValue ?? true
 
     console.log("[LINE Notify Exchange] Owner LINE status:", { 
       hasLineId: !!lineUserId, 
@@ -58,7 +59,12 @@ export async function POST(request: NextRequest) {
       exchangeRequestEnabled 
     })
 
-    if (!lineUserId || !notificationsEnabled || !exchangeRequestEnabled) {
+    if (!lineUserId) {
+      console.log("[LINE Notify Exchange] Owner has no LINE linked")
+      return NextResponse.json({ sent: false, reason: "no LINE linked" })
+    }
+    
+    if (!notificationsEnabled || !exchangeRequestEnabled) {
       return NextResponse.json({ sent: false, reason: "notifications disabled" })
     }
 
