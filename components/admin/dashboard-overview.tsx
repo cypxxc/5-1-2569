@@ -24,7 +24,6 @@ export function DashboardOverview({
   newItemsCount,
   flaggedUsersCount,
   newTicketsCount,
-  onTabChange,
 }: DashboardOverviewProps) {
   // Calculate stats
   const totalItems = items.length
@@ -121,48 +120,17 @@ export function DashboardOverview({
         <CategoryDistributionChart items={items} />
       </div>
 
-      {/* Quick Actions & Recent Activity */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        {/* Quick Actions */}
+      {/* Recent Activity - 2 Columns */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         <Card>
-          <CardHeader>
-            <CardTitle>Quick Actions</CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-2">
-            <button 
-              onClick={() => onTabChange?.('items')}
-              className="w-full text-left px-4 py-3 rounded-lg hover:bg-muted transition-colors flex items-center gap-3"
-            >
-              <Package className="h-4 w-4 text-primary" />
-              <span className="text-sm font-medium">จัดการสิ่งของ</span>
-            </button>
-            <button 
-              onClick={() => onTabChange?.('users')}
-              className="w-full text-left px-4 py-3 rounded-lg hover:bg-muted transition-colors flex items-center gap-3"
-            >
-              <Users className="h-4 w-4 text-primary" />
-              <span className="text-sm font-medium">จัดการผู้ใช้</span>
-            </button>
-            <button 
-              onClick={() => onTabChange?.('support')}
-              className="w-full text-left px-4 py-3 rounded-lg hover:bg-muted transition-colors flex items-center gap-3"
-            >
-              <MessageSquare className="h-4 w-4 text-primary" />
-              <span className="text-sm font-medium">ดู Support Tickets</span>
-            </button>
-          </CardContent>
-        </Card>
-
-        {/* Recent Activity */}
-        <Card className="lg:col-span-2">
           <CardHeader>
             <CardTitle>กิจกรรมล่าสุด</CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="space-y-4">
+            <div className="space-y-3">
               {items.slice(0, 5).map((item) => (
-                <div key={item.id} className="flex items-start gap-3 pb-4 border-b last:border-0">
-                  <div className="h-2 w-2 rounded-full bg-primary mt-2" />
+                <div key={item.id} className="flex items-start gap-3 pb-3 border-b last:border-0">
+                  <div className="h-2 w-2 rounded-full bg-primary mt-2 shrink-0" />
                   <div className="flex-1 min-w-0">
                     <p className="text-sm font-medium truncate">{item.title}</p>
                     <p className="text-xs text-muted-foreground">
@@ -174,6 +142,36 @@ export function DashboardOverview({
                   </span>
                 </div>
               ))}
+              {items.length === 0 && (
+                <p className="text-sm text-muted-foreground text-center py-4">ไม่มีกิจกรรม</p>
+              )}
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader>
+            <CardTitle>กิจกรรมก่อนหน้า</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-3">
+              {items.slice(5, 10).map((item) => (
+                <div key={item.id} className="flex items-start gap-3 pb-3 border-b last:border-0">
+                  <div className="h-2 w-2 rounded-full bg-muted-foreground/50 mt-2 shrink-0" />
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm font-medium truncate">{item.title}</p>
+                    <p className="text-xs text-muted-foreground">
+                      {item.category} • {item.status}
+                    </p>
+                  </div>
+                  <span className="text-xs text-muted-foreground shrink-0">
+                    {new Date((item.postedAt as any)?.toDate?.() || new Date()).toLocaleDateString('th-TH')}
+                  </span>
+                </div>
+              ))}
+              {items.length <= 5 && (
+                <p className="text-sm text-muted-foreground text-center py-4">ไม่มีกิจกรรมเพิ่มเติม</p>
+              )}
             </div>
           </CardContent>
         </Card>

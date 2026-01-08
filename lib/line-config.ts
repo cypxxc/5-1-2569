@@ -14,7 +14,7 @@ export const LINE_CONFIG = {
   addFriendUrl: "https://line.me/R/ti/p/@799kugvk",
   
   // Bot display name
-  botName: "RMU Exchange Notification",
+  botName: "RMU-Campus X Notification",
   
   // Alternative: LINE app deep link (for mobile)
   deepLinkUrl: "https://line.me/R/ti/p/@799kugvk",

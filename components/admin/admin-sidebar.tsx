@@ -69,7 +69,7 @@ export function AdminSidebar({ isCollapsed = false, onToggleCollapse }: AdminSid
             </div>
             <div>
               <h2 className="font-semibold text-sm">Admin Panel</h2>
-              <p className="text-xs text-muted-foreground">RMU Exchange</p>
+              <p className="text-xs text-muted-foreground">RMU-Campus X</p>
             </div>
           </div>
         )}

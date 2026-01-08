@@ -377,7 +377,7 @@ export function createStatusChangeFlex(options: {
       description: status === "accepted" 
         ? "กรุณานัดหมายเวลาและสถานที่เพื่อรับของ" 
         : status === "completed"
-        ? "ขอบคุณที่ใช้บริการ RMU Exchange!"
+        ? "ขอบคุณที่ใช้บริการ RMU-Campus X!"
         : "",
       primaryButtonText: "💬 ไปที่แชท",
       primaryButtonUrl: chatUrl,

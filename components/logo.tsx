@@ -1,5 +1,5 @@
 import Link from "next/link"
-import { GraduationCap } from "lucide-react"
+import Image from "next/image"
 
 interface LogoProps {
   size?: "sm" | "md" | "lg"
@@ -12,22 +12,22 @@ export function Logo({ size = "md", showIcon = true, href = "/dashboard", classN
   const sizes = {
     sm: {
       container: "gap-2",
-      icon: "h-7 w-7 rounded-lg",
-      iconSize: "h-4 w-4",
+      icon: "h-7 w-7",
+      iconPx: 28,
       text: "text-base",
       subtitle: "text-[10px]",
     },
     md: {
       container: "gap-2.5",
-      icon: "h-9 w-9 rounded-xl",
-      iconSize: "h-5 w-5",
+      icon: "h-9 w-9",
+      iconPx: 36,
       text: "text-xl",
       subtitle: "text-xs",
     },
     lg: {
       container: "gap-3",
-      icon: "h-14 w-14 rounded-2xl",
-      iconSize: "h-7 w-7",
+      icon: "h-14 w-14",
+      iconPx: 56,
       text: "text-3xl",
       subtitle: "text-sm",
     },
@@ -38,16 +38,23 @@ export function Logo({ size = "md", showIcon = true, href = "/dashboard", classN
   const LogoContent = () => (
     <div className={`flex items-center ${sizeConfig.container} ${className}`}>
       {showIcon && (
-        <div className={`${sizeConfig.icon} bg-linear-to-br from-primary to-primary/80 flex items-center justify-center shadow-sm`}>
-          <GraduationCap className={`${sizeConfig.iconSize} text-primary-foreground`} />
+        <div className={`${sizeConfig.icon} relative shrink-0`}>
+          <Image
+            src="/images/exchange.svg"
+            alt="RMU-Campus X Logo"
+            width={sizeConfig.iconPx}
+            height={sizeConfig.iconPx}
+            className="object-contain"
+            priority
+          />
         </div>
       )}
       <div className="flex flex-col leading-none">
         <span className={`${sizeConfig.text} font-bold tracking-tight bg-linear-to-r from-foreground to-foreground/70 bg-clip-text text-transparent`}>
-          RMU Exchange
+          RMU-Campus X
         </span>
         <span className={`${sizeConfig.subtitle} text-muted-foreground font-medium tracking-wide uppercase`}>
-          Student Platform
+          University Platform
         </span>
       </div>
     </div>
@@ -66,3 +73,4 @@ export function Logo({ size = "md", showIcon = true, href = "/dashboard", classN
 
   return <LogoContent />
 }
+

@@ -30,7 +30,7 @@ export function ModeToggle() {
           className={`gap-2 cursor-pointer transition-colors ${theme === 'light' ? 'bg-accent font-bold text-primary' : ''}`}
         >
           <Sun className="h-4 w-4" />
-          <span>Slight (สว่าง)</span>
+          <span>Light (สว่าง)</span>
         </DropdownMenuItem>
         <DropdownMenuItem 
           onClick={() => setTheme("dark")}

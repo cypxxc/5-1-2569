@@ -1,5 +1,6 @@
 "use client"
 
+import { useState, useEffect } from "react"
 import Link from "next/link"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent } from "@/components/ui/card"
@@ -10,10 +11,10 @@ import { BounceWrapper } from "@/components/ui/bounce-wrapper"
 import { Logo } from "@/components/logo"
 import dynamic from "next/dynamic"
 
-// Dynamic import for Three.js LITE version (client-only, less GPU intensive)
+// Dynamic import for Three.js - loads ONLY when needed (after page ready)
 const ThreeBackgroundLite = dynamic(
   () => import("@/components/three-background").then((mod) => mod.ThreeBackgroundLite),
-  { ssr: false }
+  { ssr: false, loading: () => null }
 )
 
 const features = [
@@ -50,12 +51,23 @@ const stats = [
 ]
 
 export default function LandingPage() {
+  // Lazy load 3D background after page is ready
+  const [show3D, setShow3D] = useState(false)
+  
+  useEffect(() => {
+    // Wait for page to be interactive before loading 3D
+    const timer = setTimeout(() => setShow3D(true), 800)
+    return () => clearTimeout(timer)
+  }, [])
+
   return (
     <div className="min-h-screen bg-background">
-      {/* 3D Background for Hero - LITE version for better performance */}
-      <div className="fixed inset-0 h-screen">
-        <ThreeBackgroundLite />
-      </div>
+      {/* 3D Background - loads after page ready for faster initial load */}
+      {show3D && (
+        <div className="fixed inset-0 h-screen animate-in fade-in duration-1000">
+          <ThreeBackgroundLite />
+        </div>
+      )}
       
       {/* Header */}
       <header className="fixed top-0 left-0 right-0 z-50 backdrop-blur-md bg-background/80 border-b">
@@ -121,7 +133,7 @@ export default function LandingPage() {
       <section className="py-20 px-4 bg-muted/30 relative z-10">
         <div className="container mx-auto max-w-5xl">
           <div className="text-center mb-12">
-            <h2 className="text-2xl sm:text-3xl font-bold mb-4">ทำไมต้อง RMU Exchange?</h2>
+            <h2 className="text-2xl sm:text-3xl font-bold mb-4">ทำไมต้อง RMU-Campus X?</h2>
             <p className="text-muted-foreground">ฟีเจอร์ที่ออกแบบมาเพื่อนักศึกษาโดยเฉพาะ</p>
           </div>
           
@@ -188,7 +200,7 @@ export default function LandingPage() {
       {/* Footer */}
       <footer className="py-8 px-4 border-t bg-muted/20">
         <div className="container mx-auto text-center text-sm text-muted-foreground">
-          <p>&copy; 2024 RMU Exchange - มหาวิทยาลัยราชภัฏมหาสารคาม</p>
+          <p>&copy; 2026 RMU-Campus X - มหาวิทยาลัยราชภัฏมหาสารคาม</p>
         </div>
       </footer>
     </div>

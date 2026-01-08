@@ -11,15 +11,16 @@ import { Mail, RefreshCw } from "lucide-react"
 import { BounceWrapper } from "@/components/ui/bounce-wrapper"
 import dynamic from "next/dynamic"
 
-// Dynamic import for Three.js (client-only)
+// Dynamic import for Three.js - loads only when needed
 const ThreeBackground = dynamic(
   () => import("@/components/three-background").then((mod) => mod.ThreeBackground),
-  { ssr: false }
+  { ssr: false, loading: () => null }
 )
 
 export default function VerifyEmailPage() {
   const [loading, setLoading] = useState(false)
   const [checking, setChecking] = useState(false)
+  const [show3D, setShow3D] = useState(false)
   const router = useRouter()
   const { toast } = useToast()
 
@@ -35,6 +36,12 @@ export default function VerifyEmailPage() {
       router.push("/dashboard")
     }
   }, [router])
+
+  // Lazy load 3D background
+  useEffect(() => {
+    const timer = setTimeout(() => setShow3D(true), 800)
+    return () => clearTimeout(timer)
+  }, [])
 
   const handleResend = async () => {
     setLoading(true)
@@ -93,8 +100,8 @@ export default function VerifyEmailPage() {
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-linear-to-b from-primary/5 via-background to-background p-4 relative overflow-hidden">
-      {/* 3D Background */}
-      <ThreeBackground />
+      {/* 3D Background - lazy loaded */}
+      {show3D && <ThreeBackground />}
       
       <BounceWrapper variant="bounce-in">
         <Card className="w-full max-w-md relative z-10 shadow-soft border-border/60">
@@ -109,7 +116,7 @@ export default function VerifyEmailPage() {
           </CardHeader>
           <CardContent className="space-y-4">
             <p className="text-sm text-center text-muted-foreground leading-relaxed">
-              กรุณาตรวจสอบอีเมลและคลิกลิงก์ยืนยันเพื่อเริ่มใช้งาน RMU Exchange ถ้าไม่พบอีเมล กรุณาตรวจสอบในโฟลเดอร์ Spam
+              กรุณาตรวจสอบอีเมลและคลิกลิงก์ยืนยันเพื่อเริ่มใช้งาน RMU-Campus X ถ้าไม่พบอีเมล กรุณาตรวจสอบในโฟลเดอร์ Spam
             </p>
             <div className="space-y-2">
               <Button onClick={handleCheckVerification} className="w-full" disabled={checking}>

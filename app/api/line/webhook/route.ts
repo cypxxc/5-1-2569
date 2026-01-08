@@ -138,7 +138,7 @@ export async function POST(request: NextRequest) {
         const result = await sendReplyMessage(event.replyToken, [
           {
             type: "text",
-            text: `สวัสดี! 👋 ยินดีต้อนรับสู่ RMU Exchange Notification
+            text: `สวัสดี! 👋 ยินดีต้อนรับสู่ RMU-Campus X Notification
 
 📧 พิมพ์อีเมลของคุณเพื่อเชื่อมบัญชี
 (ตัวอย่าง: student@rmu.ac.th)`,

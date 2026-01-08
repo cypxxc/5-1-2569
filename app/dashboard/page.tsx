@@ -97,7 +97,7 @@ export default function DashboardPage() {
               <span className="text-sm font-medium text-primary">แพลตฟอร์มแลกเปลี่ยน</span>
             </div>
             <h1 className="text-2xl sm:text-3xl font-bold text-foreground">
-              RMU Exchange
+              RMU-Campus X
             </h1>
             <p className="text-muted-foreground max-w-lg">
               แพลตฟอร์มแลกเปลี่ยนและขอรับสิ่งของสำหรับนักศึกษา

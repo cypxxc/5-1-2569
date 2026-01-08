@@ -21,27 +21,23 @@ const geistMono = Geist_Mono({
 
 export const metadata: Metadata = {
   title: {
-    default: "RMU Exchange - แพลตฟอร์มแลกเปลี่ยนสิ่งของ",
-    template: "%s | RMU Exchange",
+    default: "RMU-Campus X - แพลตฟอร์มแลกเปลี่ยนสิ่งของ",
+    template: "%s | RMU-Campus X",
   },
   description: "แพลตฟอร์มแลกเปลี่ยนและขอรับสิ่งของสำหรับนักศึกษา มหาวิทยาลัยราชภัฏมหาสารคาม",
-  keywords: ["RMU", "แลกเปลี่ยน", "สิ่งของ", "นักศึกษา", "มหาวิทยาลัยราชภัฏมหาสารคาม"],
-  authors: [{ name: "RMU Exchange Team" }],
+  keywords: ["RMU", "Campus X", "แลกเปลี่ยน", "สิ่งของ", "นักศึกษา", "มหาวิทยาลัยราชภัฏมหาสารคาม"],
+  authors: [{ name: "RMU-Campus X Team" }],
   icons: {
-    icon: [
-      { url: "/icon.svg?v=2", type: "image/svg+xml" },
-      { url: "/icon-light.svg?v=2", media: "(prefers-color-scheme: light)", type: "image/svg+xml" },
-      { url: "/icon-dark.svg?v=2", media: "(prefers-color-scheme: dark)", type: "image/svg+xml" },
-    ],
-    apple: "/apple-icon.svg?v=2",
-    shortcut: "/icon.svg?v=2",
+    icon: "/images/exchange.svg",
+    shortcut: "/images/exchange.svg",
+    apple: "/images/exchange.svg",
   },
   openGraph: {
     type: "website",
     locale: "th_TH",
-    title: "RMU Exchange",
+    title: "RMU-Campus X",
     description: "แพลตฟอร์มแลกเปลี่ยนและขอรับสิ่งของสำหรับนักศึกษา มหาวิทยาลัยราชภัฏมหาสารคาม",
-    siteName: "RMU Exchange",
+    siteName: "RMU-Campus X",
   },
   robots: {
     index: true,
