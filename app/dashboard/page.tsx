@@ -1,12 +1,12 @@
 "use client"
 
-import { useEffect, useState, useMemo, useCallback, memo } from "react"
+import { useEffect, useState, useCallback } from "react"
 import { getItems } from "@/lib/firestore"
 import type { Item, ItemCategory, ItemStatus } from "@/types"
 import { ItemCard } from "@/components/item-card"
 import { FilterSidebar } from "@/components/filter-sidebar"
 import { Button } from "@/components/ui/button"
-import { Search, Loader2, Package, Sparkles, ChevronLeft, ChevronRight } from "lucide-react"
+import { Search, Loader2, Package, Sparkles } from "lucide-react"
 import { useAuth } from "@/components/auth-provider"
 import { Input } from "@/components/ui/input"
 import {
@@ -17,6 +17,10 @@ import {
 import { ItemDetailView } from "@/components/item-detail-view"
 import { AccountStatusBanner } from "@/components/account-status-banner"
 import { BounceWrapper } from "@/components/ui/bounce-wrapper"
+import debounce from 'lodash/debounce'
+import { useInView } from 'react-intersection-observer'
+import { toast } from 'sonner'
+import { memo } from "react" // Keep memo for MemoizedItemCard
 
 // Memoized Item Card เพื่อป้องกัน re-render
 const MemoizedItemCard = memo(ItemCard)
@@ -27,64 +31,89 @@ export default function DashboardPage() {
   const [category, setCategory] = useState<ItemCategory | "all">("all")
   const [status, setStatus] = useState<ItemStatus | "all">("available")
   const [searchQuery, setSearchQuery] = useState("")
+  const [debouncedSearchQuery, setDebouncedSearchQuery] = useState("")
   const { user } = useAuth()
   const [selectedItem, setSelectedItem] = useState<Item | null>(null)
-  const [currentPage, setCurrentPage] = useState(1)
-  const itemsPerPage = 12
+
+  // Infinite scroll states
+  const [loadingMore, setLoadingMore] = useState(false)
+  const [hasMore, setHasMore] = useState(true)
+  const [lastDoc, setLastDoc] = useState<any>(null)
+  const { ref, inView } = useInView()
+
+  // Debounce search query
+  useEffect(() => {
+    const handler = debounce(() => {
+      setDebouncedSearchQuery(searchQuery)
+    }, 500)
+
+    handler()
+
+    return () => {
+      handler.cancel()
+    }
+  }, [searchQuery])
 
   // Memoized loadItems function
-  const loadItems = useCallback(async () => {
-    setLoading(true)
+  const loadItems = useCallback(async (isInitial: boolean = false) => {
     try {
-      const filters: { category?: ItemCategory; status?: ItemStatus } = {}
+      if (isInitial) {
+        setLoading(true)
+        setItems([])
+        setLastDoc(null)
+        setHasMore(true)
+      } else {
+        setLoadingMore(true)
+      }
+
+      const filters: { category?: ItemCategory; status?: ItemStatus; searchQuery?: string; lastDoc?: any; pageSize?: number } = {
+        pageSize: 12, // Define a page size for infinite scroll
+      }
       if (category !== "all") filters.category = category
       if (status !== "all") filters.status = status
+      if (debouncedSearchQuery.trim()) filters.searchQuery = debouncedSearchQuery.trim()
+      if (!isInitial && lastDoc) filters.lastDoc = lastDoc
 
       const result = await getItems(filters)
       
       // Handle ApiResponse format
       if (result.success && result.data) {
-        setItems(result.data.items)
+        const newItems = result.data.items
+        if (isInitial) {
+          setItems(newItems)
+        } else {
+          setItems(prev => [...prev, ...newItems])
+        }
+        setLastDoc(result.data.lastDoc)
+        setHasMore(result.data.hasMore)
       } else {
         console.error('[Dashboard] Error:', result.error)
+        toast.error('ไม่สามารถโหลดข้อมูลได้')
         setItems([])
+        setHasMore(false)
       }
     } catch (error) {
       console.error('[Dashboard] Error:', error)
+      toast.error('เกิดข้อผิดพลาดในการโหลดข้อมูล')
       setItems([])
+      setHasMore(false)
     } finally {
       setLoading(false)
+      setLoadingMore(false)
     }
-  }, [category, status])
+  }, [category, status, debouncedSearchQuery, lastDoc])
 
+  // Initial load and reload on filter/search change
   useEffect(() => {
-    loadItems()
+    loadItems(true)
   }, [loadItems])
 
-  // Memoized filtered items
-  const filteredItems = useMemo(() => {
-    if (!searchQuery) return items
-    const searchLower = searchQuery.toLowerCase()
-    return items.filter(item => 
-      item.title.toLowerCase().includes(searchLower) ||
-      item.description.toLowerCase().includes(searchLower)
-    )
-  }, [items, searchQuery])
-
-  // Memoized pagination
-  const { paginatedItems, totalPages } = useMemo(() => {
-    const total = Math.ceil(filteredItems.length / itemsPerPage)
-    const paginated = filteredItems.slice(
-      (currentPage - 1) * itemsPerPage,
-      currentPage * itemsPerPage
-    )
-    return { paginatedItems: paginated, totalPages: total }
-  }, [filteredItems, currentPage, itemsPerPage])
-
-  // Reset to page 1 when filter changes
+  // Load more items when inView and conditions met
   useEffect(() => {
-    setCurrentPage(1)
-  }, [category, status, searchQuery])
+    if (inView && hasMore && !loading && !loadingMore) {
+      loadItems(false)
+    }
+  }, [inView, hasMore, loading, loadingMore, loadItems])
 
   return (
     <div className="min-h-screen bg-background">
@@ -131,7 +160,7 @@ export default function DashboardPage() {
                 {loading ? (
                   "กำลังโหลด..."
                 ) : (
-                  searchQuery ? `พบ ${filteredItems.length} รายการจากคำค้นหา` : `พบ ${items.length} รายการ`
+                  debouncedSearchQuery ? `พบ ${items.length} รายการจากคำค้นหา` : `พบ ${items.length} รายการ`
                 )}
               </h2>
               
@@ -147,24 +176,24 @@ export default function DashboardPage() {
             </div>
 
             {/* Loading State */}
-            {loading ? (
+            {loading && items.length === 0 ? (
               <div className="flex flex-col items-center justify-center py-16 text-center">
                 <Loader2 className="h-8 w-8 animate-spin text-primary mb-4" />
                 <p className="text-sm text-muted-foreground">กำลังโหลดข้อมูล...</p>
               </div>
-            ) : filteredItems.length === 0 ? (
+            ) : items.length === 0 ? (
               /* Empty State */
               <div className="flex flex-col items-center justify-center py-16 text-center">
                 <div className="h-16 w-16 rounded-2xl bg-muted flex items-center justify-center mb-4">
-                  {searchQuery ? <Search className="h-8 w-8 text-muted-foreground" /> : <Package className="h-8 w-8 text-muted-foreground" />}
+                  {debouncedSearchQuery ? <Search className="h-8 w-8 text-muted-foreground" /> : <Package className="h-8 w-8 text-muted-foreground" />}
                 </div>
                 <h3 className="text-lg font-semibold mb-2">
-                  {searchQuery ? "ไม่พบสิ่งของที่ค้นหา" : "ไม่พบสิ่งของ"}
+                  {debouncedSearchQuery ? "ไม่พบสิ่งของที่ค้นหา" : "ไม่พบสิ่งของ"}
                 </h3>
                 <p className="text-muted-foreground text-sm max-w-sm">
-                  {searchQuery ? "ลองค้นหาด้วยคำสำคัญอื่นๆ หรือตรวจสอบคำผิด" : "ลองเปลี่ยนตัวกรองหรือกลับมาดูใหม่ภายหลัง"}
+                  {debouncedSearchQuery ? "ลองค้นหาด้วยคำสำคัญอื่นๆ หรือตรวจสอบคำผิด" : "ลองเปลี่ยนตัวกรองหรือกลับมาดูใหม่ภายหลัง"}
                 </p>
-                {(category !== "all" || status !== "all" || searchQuery) && (
+                {(category !== "all" || status !== "all" || debouncedSearchQuery) && (
                   <Button 
                     variant="outline" 
                     className="mt-4"
@@ -182,7 +211,7 @@ export default function DashboardPage() {
               /* Items Grid */
               <>
                 <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-4 sm:gap-6">
-                  {paginatedItems.map((item, index) => (
+                  {items.map((item, index) => (
                     <BounceWrapper 
                       key={item.id} 
                       variant="bounce-up"
@@ -197,54 +226,10 @@ export default function DashboardPage() {
                   ))}
                 </div>
 
-                {/* Pagination Controls */}
-                {totalPages > 1 && (
-                  <div className="flex items-center justify-center gap-2 mt-8">
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
-                      disabled={currentPage === 1}
-                      className="gap-1"
-                    >
-                      <ChevronLeft className="h-4 w-4" />
-                      ก่อนหน้า
-                    </Button>
-                    <div className="flex items-center gap-1">
-                      {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
-                        let pageNum: number
-                        if (totalPages <= 5) {
-                          pageNum = i + 1
-                        } else if (currentPage <= 3) {
-                          pageNum = i + 1
-                        } else if (currentPage >= totalPages - 2) {
-                          pageNum = totalPages - 4 + i
-                        } else {
-                          pageNum = currentPage - 2 + i
-                        }
-                        return (
-                          <Button
-                            key={pageNum}
-                            variant={currentPage === pageNum ? "default" : "outline"}
-                            size="sm"
-                            className="w-9 h-9 p-0"
-                            onClick={() => setCurrentPage(pageNum)}
-                          >
-                            {pageNum}
-                          </Button>
-                        )
-                      })}
-                    </div>
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
-                      disabled={currentPage === totalPages}
-                      className="gap-1"
-                    >
-                      ถัดไป
-                      <ChevronRight className="h-4 w-4" />
-                    </Button>
+                {/* Infinite Scroll Loader */}
+                {hasMore && items.length > 0 && (
+                  <div ref={ref} className="mt-8 flex justify-center py-4">
+                     {loadingMore && <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />}
                   </div>
                 )}
               </>

@@ -67,6 +67,7 @@ export interface Item {
   postedByName?: string // Display name of poster (cached for fast display)
   postedAt: Timestamp
   updatedAt: Timestamp
+  searchKeywords?: string[] // For server-side simple search
 }
 
 export interface Exchange {
