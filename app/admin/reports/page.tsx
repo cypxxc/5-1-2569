@@ -343,80 +343,60 @@ export default function AdminReportsPage() {
       </div>
 
       {/* Reports List */}
-      <Tabs defaultValue="pending" className="w-full">
-        <TabsList className="bg-muted/50 p-1 mb-4">
-          <TabsTrigger value="pending" className="data-[state=active]:bg-background data-[state=active]:shadow-sm">
-             รอดำเนินการ ({pendingReports.length})
-          </TabsTrigger>
-          <TabsTrigger value="history" className="data-[state=active]:bg-background data-[state=active]:shadow-sm">
-             ประวัติ ({historyReports.length})
-          </TabsTrigger>
-        </TabsList>
+      <Card className="overflow-hidden border shadow-sm">
+        <CardHeader className="border-b px-6 py-4">
+          <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+            <CardTitle className="flex items-center gap-2">
+              <AlertTriangle className="h-5 w-5 text-yellow-600" />
+              รายการที่ต้องจัดการ
+              <Badge variant="secondary" className="ml-2 px-3 py-1">
+                {filteredReports.length} รายการ
+              </Badge>
+            </CardTitle>
+            <div className="relative w-full md:w-auto">
+              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+              <Input
+                placeholder="ค้นหารายงาน..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="pl-10 bg-background w-full md:w-[300px]"
+              />
+            </div>
+          </div>
+        </CardHeader>
+        <CardContent className="p-0">
+          <Tabs defaultValue="pending" className="w-full">
+            <div className="px-6 py-3 border-b bg-muted/30">
+              <TabsList className="bg-muted/50 p-1">
+                <TabsTrigger value="pending" className="gap-2 data-[state=active]:bg-background data-[state=active]:shadow-sm">
+                   รอดำเนินการ 
+                   <Badge variant="secondary" className="px-1.5 h-5 text-[10px] bg-muted-foreground/10 text-foreground">{pendingReports.length}</Badge>
+                </TabsTrigger>
+                <TabsTrigger value="history" className="gap-2 data-[state=active]:bg-background data-[state=active]:shadow-sm">
+                   ประวัติ
+                   <Badge variant="secondary" className="px-1.5 h-5 text-[10px] bg-muted-foreground/10 text-foreground">{historyReports.length}</Badge>
+                </TabsTrigger>
+              </TabsList>
+            </div>
 
-        <TabsContent value="pending">
-          <Card className="overflow-hidden border shadow-sm">
-             <CardHeader className="border-b px-6 py-4">
-               <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
-                 <CardTitle className="flex items-center gap-2">
-                   <AlertTriangle className="h-4 w-4 text-yellow-600" />
-                   รายการที่ต้องจัดการ
-                   <Badge variant="secondary" className="ml-2 px-3 py-1">
-                     {pendingReports.length} รายการ
-                   </Badge>
-                 </CardTitle>
-                 <div className="relative w-full md:w-auto">
-                   <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                   <Input
-                     placeholder="ค้นหารายงาน..."
-                     value={searchQuery}
-                     onChange={(e) => setSearchQuery(e.target.value)}
-                     className="pl-10 bg-background w-full md:w-[300px]"
-                   />
-                 </div>
-               </div>
-             </CardHeader>
-             <CardContent className="p-0">
+            <TabsContent value="pending" className="m-0">
                <ReportsTable 
                  data={pendingReports} 
                  onView={(r) => setSelectedReport(r)} 
                  emptyMessage="ไม่มีรายการที่รอดำเนินการ"
                />
-             </CardContent>
-          </Card>
-        </TabsContent>
-
-        <TabsContent value="history">
-           <Card className="overflow-hidden border shadow-sm">
-             <CardHeader className="border-b px-6 py-4">
-               <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
-                 <CardTitle className="flex items-center gap-2">
-                   <Clock className="h-4 w-4 text-muted-foreground" />
-                   ประวัติการจัดการ
-                   <Badge variant="secondary" className="ml-2 px-3 py-1">
-                     {historyReports.length} รายการ
-                   </Badge>
-                 </CardTitle>
-                 <div className="relative w-full md:w-auto">
-                   <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                   <Input
-                     placeholder="ค้นหารายงาน..."
-                     value={searchQuery}
-                     onChange={(e) => setSearchQuery(e.target.value)}
-                     className="pl-10 bg-background w-full md:w-[300px]"
-                   />
-                 </div>
-               </div>
-             </CardHeader>
-             <CardContent className="p-0">
+            </TabsContent>
+            
+            <TabsContent value="history" className="m-0">
                <ReportsTable 
                  data={historyReports} 
                  onView={(r) => setSelectedReport(r)} 
                  emptyMessage="ไม่มีประวัติการรายงาน"
                />
-             </CardContent>
-          </Card>
-        </TabsContent>
-      </Tabs>
+            </TabsContent>
+          </Tabs>
+        </CardContent>
+      </Card>
 
       {/* Report Detail Modal */}
       <Dialog open={!!selectedReport} onOpenChange={(open) => !open && setSelectedReport(null)}>

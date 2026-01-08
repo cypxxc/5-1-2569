@@ -3,7 +3,7 @@
 import { useState } from "react"
 import { useAuth } from "@/components/auth-provider"
 import { createReport } from "@/lib/firestore"
-import { resizeImage } from "@/lib/storage"
+import { uploadToCloudinary } from "@/lib/storage"
 import { useToast } from "@/hooks/use-toast"
 import Image from "next/image"
 import { UnifiedModal, UnifiedModalActions } from "@/components/ui/unified-modal"
@@ -270,8 +270,9 @@ export function ReportModal({ open, onOpenChange, reportType, targetId, targetTi
       for (let i = 0; i < files.length; i++) {
         const file = files[i]
         if (file) {
-          const base64 = await resizeImage(file)
-          newImages.push(base64)
+          // Upload to Cloudinary
+          const cloudinaryUrl = await uploadToCloudinary(file, 'item')
+          newImages.push(cloudinaryUrl)
         }
       }
       setImages(newImages)

@@ -12,6 +12,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Input } from "@/components/ui/input"
 import { Textarea } from "@/components/ui/textarea"
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import {
   Dialog,
   DialogContent,
@@ -45,6 +46,33 @@ const ticketStatusLabels: Record<string, string> = {
   closed: "ปิด",
 }
 
+const getStatusBadge = (status: string) => {
+  const configs: Record<string, { className: string; icon: any }> = {
+    new: { className: "bg-blue-100 text-blue-800 border-blue-200", icon: Inbox },
+    in_progress: { className: "bg-yellow-100 text-yellow-800 border-yellow-200", icon: Clock },
+    resolved: { className: "bg-green-100 text-green-800 border-green-200", icon: CheckCircle2 },
+    closed: { className: "bg-muted text-muted-foreground border-muted", icon: CheckCircle2 },
+  }
+  const config = configs[status]
+  
+  const Icon = config?.icon || CheckCircle2 // Fallback icon
+
+  if (!config) {
+    return (
+      <Badge className="bg-muted text-muted-foreground gap-1">
+        {ticketStatusLabels[status] || status}
+      </Badge>
+    )
+  }
+  
+  return (
+    <Badge className={`${config.className} gap-1 shadow-sm`}>
+      <Icon className="h-3 w-3" />
+      {ticketStatusLabels[status] || status}
+    </Badge>
+  )
+}
+
 export default function AdminSupportPage() {
   const [tickets, setTickets] = useState<SupportTicket[]>([])
   const [loading, setLoading] = useState(true)
@@ -54,8 +82,7 @@ export default function AdminSupportPage() {
   const [ticketReply, setTicketReply] = useState("")
   const [processing, setProcessing] = useState(false)
   const [searchQuery, setSearchQuery] = useState("")
-  const [currentPage, setCurrentPage] = useState(1)
-  const itemsPerPage = 10
+
 
   const { user, loading: authLoading } = useAuth()
   const router = useRouter()
@@ -144,30 +171,7 @@ export default function AdminSupportPage() {
     }
   }
 
-  const getStatusBadge = (status: string) => {
-    const configs: Record<string, { className: string; icon: typeof Clock }> = {
-      new: { className: "bg-blue-100 text-blue-800 border-blue-200", icon: Inbox },
-      in_progress: { className: "bg-yellow-100 text-yellow-800 border-yellow-200", icon: Clock },
-      resolved: { className: "bg-green-100 text-green-800 border-green-200", icon: CheckCircle2 },
-      closed: { className: "bg-muted text-muted-foreground border-muted", icon: CheckCircle2 },
-    }
-    const config = configs[status]
-    if (!config) {
-      return (
-        <Badge className="bg-muted text-muted-foreground gap-1">
-          {ticketStatusLabels[status] || status}
-        </Badge>
-      )
-    }
-    const Icon = config.icon
-    
-    return (
-      <Badge className={`${config.className} gap-1`}>
-        <Icon className="h-3 w-3" />
-        {ticketStatusLabels[status] || status}
-      </Badge>
-    )
-  }
+
 
   if (loading || !isAdmin) {
     return (
@@ -189,6 +193,10 @@ export default function AdminSupportPage() {
 
   const newCount = tickets.filter(t => t.status === 'new').length
   const inProgressCount = tickets.filter(t => t.status === 'in_progress').length
+  
+  const pendingTickets = filteredTickets.filter(t => ['new', 'in_progress'].includes(t.status))
+  const historyTickets = filteredTickets.filter(t => ['resolved', 'closed'].includes(t.status))
+
 
   return (
     <div className="min-h-screen bg-background py-6">
@@ -288,112 +296,54 @@ export default function AdminSupportPage() {
           </div>
         </CardHeader>
         <CardContent className="p-0">
-          <Table>
-            <TableHeader>
-              <TableRow className="bg-muted/30 hover:bg-muted/40">
-                <TableHead className="font-semibold">หัวข้อ</TableHead>
-                <TableHead className="font-semibold">หมวดหมู่</TableHead>
-                <TableHead className="font-semibold">สถานะ</TableHead>
-                <TableHead className="font-semibold">วันที่</TableHead>
-                <TableHead className="text-right font-semibold">จัดการ</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {filteredTickets.length === 0 ? (
-                <TableRow>
-                  <TableCell colSpan={5} className="text-center py-16 px-4">
-                    <div className="p-4 rounded-full bg-muted/50 w-fit mx-auto mb-4">
-                      <MessageSquare className="h-12 w-12 text-muted-foreground/50" />
-                    </div>
-                    <h3 className="text-lg font-semibold text-foreground mb-1">
-                      {searchQuery ? "ไม่พบ Ticket ที่ค้นหา" : "ไม่มี Tickets"}
-                    </h3>
-                    <p className="text-sm text-muted-foreground">
-                      {searchQuery ? "ลองเปลี่ยนคำค้นหาใหม่" : "เมื่อมีผู้ใช้แจ้งปัญหาจะแสดงที่นี่"}
-                    </p>
-                  </TableCell>
-                </TableRow>
-              ) : (
-                filteredTickets
-                  .slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage)
-                  .map((ticket) => (
-                  <TableRow key={ticket.id} className="hover:bg-muted/5 border-b last:border-0">
-                    <TableCell>
-                      <div>
-                        <p className="font-medium text-foreground">{ticket.subject}</p>
-                        <p className="text-xs text-muted-foreground flex items-center gap-1">
-                          <span className="w-1.5 h-1.5 rounded-full bg-primary/40" />
-                          {ticket.userEmail}
-                        </p>
-                      </div>
-                    </TableCell>
-                    <TableCell>
-                      <Badge variant="outline" className="font-normal bg-background/50">{ticketCategoryLabels[ticket.category]}</Badge>
-                    </TableCell>
-                    <TableCell>{getStatusBadge(ticket.status)}</TableCell>
-                    <TableCell className="text-sm text-muted-foreground">
-                      {((ticket.createdAt as any)?.toDate?.() || new Date()).toLocaleString('th-TH', { year: 'numeric', month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })}
-                    </TableCell>
-                    <TableCell className="text-right">
-                      <Button variant="ghost" size="sm" onClick={async () => {
-                        setSelectedTicket(ticket)
-                        // Fetch user profile
-                        try {
-                          const profile = await getUserProfile(ticket.userId)
-                          setTicketUser(profile)
-                        } catch (e) {
-                          setTicketUser(null)
-                        }
-                      }}
-                      className="hover:bg-primary/10 hover:text-primary"
-                      >
-                        <Eye className="h-4 w-4 mr-1" />
-                        ดูรายละเอียด
-                      </Button>
-                    </TableCell>
-                  </TableRow>
-                ))
-              )}
-            </TableBody>
-          </Table>
-          
-          {/* Pagination */}
-          {filteredTickets.length > itemsPerPage && (
-            <div className="flex items-center justify-center gap-2 p-4 border-t">
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
-                disabled={currentPage === 1}
-              >
-                ก่อนหน้า
-              </Button>
-              <div className="flex items-center gap-1">
-                {Array.from({ length: Math.ceil(filteredTickets.length / itemsPerPage) }, (_, i) => i + 1).slice(
-                  Math.max(0, currentPage - 3),
-                  Math.min(Math.ceil(filteredTickets.length / itemsPerPage), currentPage + 2)
-                ).map(page => (
-                  <Button
-                    key={page}
-                    variant={currentPage === page ? "default" : "ghost"}
-                    size="sm"
-                    className="w-8 h-8"
-                    onClick={() => setCurrentPage(page)}
-                  >
-                    {page}
-                  </Button>
-                ))}
-              </div>
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => setCurrentPage(p => Math.min(Math.ceil(filteredTickets.length / itemsPerPage), p + 1))}
-                disabled={currentPage === Math.ceil(filteredTickets.length / itemsPerPage)}
-              >
-                ถัดไป
-              </Button>
+          <Tabs defaultValue="pending" className="w-full">
+            <div className="px-6 py-3 border-b bg-muted/30">
+              <TabsList className="bg-muted/50 p-1">
+                <TabsTrigger value="pending" className="gap-2 data-[state=active]:bg-background data-[state=active]:shadow-sm">
+                   รอดำเนินการ 
+                   <Badge variant="secondary" className="px-1.5 h-5 text-[10px] bg-muted-foreground/10 text-foreground">{pendingTickets.length}</Badge>
+                </TabsTrigger>
+                <TabsTrigger value="history" className="gap-2 data-[state=active]:bg-background data-[state=active]:shadow-sm">
+                   ประวัติ
+                   <Badge variant="secondary" className="px-1.5 h-5 text-[10px] bg-muted-foreground/10 text-foreground">{historyTickets.length}</Badge>
+                </TabsTrigger>
+              </TabsList>
             </div>
-          )}
+
+            <TabsContent value="pending" className="m-0">
+               <TicketsTable 
+                 data={pendingTickets} 
+                 onView={async (ticket) => {
+                    setSelectedTicket(ticket)
+                    try {
+                      const profile = await getUserProfile(ticket.userId)
+                      setTicketUser(profile)
+                    } catch (e) {
+                      setTicketUser(null)
+                    }
+                 }} 
+                 emptyMessage="ไม่มี Tickets รอดำเนินการ"
+                 searchQuery={searchQuery}
+               />
+            </TabsContent>
+            
+            <TabsContent value="history" className="m-0">
+               <TicketsTable 
+                 data={historyTickets} 
+                 onView={async (ticket) => {
+                    setSelectedTicket(ticket)
+                    try {
+                      const profile = await getUserProfile(ticket.userId)
+                      setTicketUser(profile)
+                    } catch (e) {
+                      setTicketUser(null)
+                    }
+                 }} 
+                 emptyMessage="ไม่มีประวัติ Tickets"
+                 searchQuery={searchQuery}
+               />
+            </TabsContent>
+          </Tabs>
         </CardContent>
       </Card>
 
@@ -587,5 +537,128 @@ export default function AdminSupportPage() {
       </Dialog>
     </div>
   </div>
+  )
+}
+
+function TicketsTable({ 
+  data, 
+  onView, 
+  emptyMessage,
+  searchQuery
+}: { 
+  data: SupportTicket[], 
+  onView: (ticket: SupportTicket) => void, 
+  emptyMessage: string,
+  searchQuery?: string
+}) {
+  const [currentPage, setCurrentPage] = useState(1)
+  const itemsPerPage = 10
+  const totalPages = Math.ceil(data.length / itemsPerPage)
+  
+  useEffect(() => {
+    setCurrentPage(1)
+  }, [data.length])
+
+  const paginatedData = data.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage)
+
+  return (
+     <div>
+       <div className="border rounded-lg overflow-hidden">
+          <Table>
+            <TableHeader>
+              <TableRow className="bg-muted hover:bg-muted">
+                <TableHead className="font-semibold">หัวข้อ</TableHead>
+                <TableHead className="font-semibold">หมวดหมู่</TableHead>
+                <TableHead className="font-semibold">สถานะ</TableHead>
+                <TableHead className="font-semibold">วันที่</TableHead>
+                <TableHead className="text-right font-semibold">จัดการ</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {data.length === 0 ? (
+                <TableRow>
+                  <TableCell colSpan={5} className="text-center py-16 px-4">
+                    <div className="p-4 rounded-full bg-muted w-fit mx-auto mb-4">
+                      <MessageSquare className="h-12 w-12 text-muted-foreground" />
+                    </div>
+                    <h3 className="text-lg font-semibold text-foreground mb-1">
+                      {emptyMessage}
+                    </h3>
+                    <p className="text-sm text-muted-foreground">
+                      {searchQuery ? "ลองเปลี่ยนคำค้นหาใหม่" : "เมื่อมีผู้ใช้แจ้งปัญหาจะแสดงที่นี่"}
+                    </p>
+                  </TableCell>
+                </TableRow>
+              ) : (
+                paginatedData.map((ticket) => (
+                  <TableRow key={ticket.id} className="hover:bg-muted/50 border-b last:border-0 bg-card">
+                    <TableCell>
+                      <div>
+                        <p className="font-medium text-foreground">{ticket.subject}</p>
+                        <p className="text-xs text-muted-foreground flex items-center gap-1">
+                          <span className="w-1.5 h-1.5 rounded-full bg-primary/40" />
+                          {ticket.userEmail}
+                        </p>
+                      </div>
+                    </TableCell>
+                    <TableCell>
+                      <Badge variant="outline" className="font-normal bg-background/50">{ticketCategoryLabels[ticket.category]}</Badge>
+                    </TableCell>
+                    <TableCell>{getStatusBadge(ticket.status)}</TableCell>
+                    <TableCell className="text-sm text-muted-foreground">
+                      {((ticket.createdAt as any)?.toDate?.() || new Date()).toLocaleString('th-TH', { year: 'numeric', month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })}
+                    </TableCell>
+                    <TableCell className="text-right">
+                      <Button variant="ghost" size="sm" onClick={() => onView(ticket)}
+                      className="hover:bg-primary/10 hover:text-primary"
+                      >
+                        <Eye className="h-4 w-4 mr-1" />
+                        ดูรายละเอียด
+                      </Button>
+                    </TableCell>
+                  </TableRow>
+                ))
+              )}
+            </TableBody>
+          </Table>
+       </div>
+       
+       {data.length > itemsPerPage && (
+        <div className="flex items-center justify-center gap-2 p-4 pt-6">
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
+            disabled={currentPage === 1}
+          >
+            ก่อนหน้า
+          </Button>
+          <div className="flex items-center gap-1">
+             {Array.from({ length: totalPages }, (_, i) => i + 1).slice(
+                  Math.max(0, currentPage - 3),
+                  Math.min(totalPages, currentPage + 2)
+             ).map(page => (
+               <Button
+                  key={page}
+                  variant={currentPage === page ? "default" : "ghost"}
+                  size="sm"
+                  className="w-8 h-8"
+                  onClick={() => setCurrentPage(page)}
+               >
+                 {page}
+               </Button>
+             ))}
+          </div>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
+            disabled={currentPage === totalPages}
+          >
+            ถัดไป
+          </Button>
+        </div>
+       )}
+     </div>
   )
 }

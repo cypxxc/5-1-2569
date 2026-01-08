@@ -58,7 +58,7 @@ export interface Item {
   description: string
   category: ItemCategory
   imageUrl?: string // @deprecated - use imageUrls instead. Kept for backward compatibility
-  imageUrls?: string[] // Array of Base64 Data URLs (max 5 images)
+  imageUrls?: string[] // Array of image URLs (Cloudinary CDN or legacy Base64)
   location?: string
   locationDetail?: string
   status: ItemStatus

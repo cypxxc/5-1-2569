@@ -65,36 +65,6 @@ export const chatMessageSchema = z.object({
 
 export type ChatMessageFormData = z.infer<typeof chatMessageSchema>
 
-// ===== File Upload Validation =====
-export const ALLOWED_IMAGE_TYPES = [
-  "image/jpeg",
-  "image/png",
-  "image/webp",
-  "image/gif",
-]
-
-export const MAX_FILE_SIZE = 5 * 1024 * 1024 // 5MB
-
-export function validateImageFile(file: File): { valid: boolean; error?: string } {
-  // ตรวจสอบ file type
-  if (!ALLOWED_IMAGE_TYPES.includes(file.type)) {
-    return {
-      valid: false,
-      error: "รองรับเฉพาะไฟล์รูปภาพ (JPEG, PNG, WebP, GIF)",
-    }
-  }
-
-  // ตรวจสอบขนาดไฟล์
-  if (file.size > MAX_FILE_SIZE) {
-    return {
-      valid: false,
-      error: "ขนาดไฟล์ต้องไม่เกิน 5MB",
-    }
-  }
-
-  return { valid: true }
-}
-
 // ===== Email Validation =====
 export const emailSchema = z
   .string()

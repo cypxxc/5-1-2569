@@ -27,7 +27,7 @@ import { useToast } from "@/hooks/use-toast"
 import Image from "next/image"
 import { formatDistanceToNow } from "date-fns"
 import { th } from "date-fns/locale"
-import { processImage } from "@/lib/storage"
+import { uploadToCloudinary } from "@/lib/storage"
 import { updateUserProfile, getUserProfile } from "@/lib/firestore"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
@@ -204,11 +204,12 @@ export default function ProfilePage() {
 
     setUploadingImage(true)
     try {
-      const result = await processImage(file, { maxWidth: 400, maxHeight: 400, quality: 0.7 })
-      setProfileImage(result.full)
+      // Upload to Cloudinary
+      const cloudinaryUrl = await uploadToCloudinary(file, 'avatar')
+      setProfileImage(cloudinaryUrl)
       if (user) {
         await updateUserProfile(user.uid, { 
-          photoURL: result.full,
+          photoURL: cloudinaryUrl,
           email: user.email || ""
         })
         toast({ title: "อัปโหลดรูปโปรไฟล์สำเร็จ" })

@@ -220,9 +220,9 @@ export default function AdminLogsPage() {
           </CardHeader>
           <CardContent className="p-0">
             {filteredLogs.length === 0 ? (
-              <div className="text-center py-16 px-4">
-                <div className="p-4 rounded-full bg-muted/50 w-fit mx-auto mb-4">
-                  <ClipboardList className="h-12 w-12 text-muted-foreground/50" />
+              <div className="text-center py-16 px-4 bg-card">
+                <div className="p-4 rounded-full bg-muted w-fit mx-auto mb-4">
+                  <ClipboardList className="h-12 w-12 text-muted-foreground" />
                 </div>
                 <h3 className="text-lg font-semibold text-foreground mb-1">
                   {searchQuery ? "ไม่พบกิจกรรมที่ค้นหา" : "ยังไม่มีบันทึกกิจกรรม"}
@@ -235,7 +235,7 @@ export default function AdminLogsPage() {
               <div className="overflow-x-auto">
                 <Table>
                   <TableHeader>
-                    <TableRow className="bg-muted/30 hover:bg-muted/40">
+                    <TableRow className="bg-muted hover:bg-muted">
                       <TableHead className="font-semibold">การกระทำ</TableHead>
                       <TableHead className="font-semibold">เป้าหมาย</TableHead>
                       <TableHead className="font-semibold">รายละเอียด</TableHead>
@@ -246,14 +246,14 @@ export default function AdminLogsPage() {
                   <TableBody>
                     {filteredLogs
                       .slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage)
-                      .map((log, index) => {
+                      .map((log) => {
                       const actionConfig = ACTION_TYPE_LABELS[log.actionType] || ACTION_TYPE_LABELS.other
                       const ActionIcon = actionConfig.icon
                       
                       return (
                         <TableRow 
                           key={log.id} 
-                          className={`hover:bg-muted/50 transition-colors ${index % 2 === 0 ? 'bg-background' : 'bg-muted/10'}`}
+                          className="hover:bg-muted transition-colors bg-card"
                         >
                           <TableCell>
                             <Badge className={`${actionConfig.color} gap-1.5 shadow-sm`}>

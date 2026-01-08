@@ -4,7 +4,7 @@ import type React from "react"
 import { useState, useEffect } from "react"
 import { useAuth } from "@/components/auth-provider"
 import { createItem } from "@/lib/firestore"
-import { resizeImage, validateImageFile } from "@/lib/storage"
+import { uploadToCloudinary, validateImageFile } from "@/lib/storage"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
@@ -156,8 +156,7 @@ export function PostItemModal({ open, onOpenChange, onSuccess }: PostItemModalPr
 
     try {
       const newImages: string[] = []
-      let totalOriginalKB = 0
-      let totalCompressedKB = 0
+      let uploadCount = 0
 
       for (const file of Array.from(files)) {
         // Validate each file
@@ -171,19 +170,18 @@ export function PostItemModal({ open, onOpenChange, onSuccess }: PostItemModalPr
           continue
         }
 
-        totalOriginalKB += Math.round(file.size / 1024)
-        const base64 = await resizeImage(file)
-        newImages.push(base64)
-        totalCompressedKB += Math.round((base64.length * 3 / 4) / 1024)
+        // Upload to Cloudinary
+        const cloudinaryUrl = await uploadToCloudinary(file, 'item')
+        newImages.push(cloudinaryUrl)
+        uploadCount++
       }
 
       if (newImages.length > 0) {
         setImages(prev => [...prev, ...newImages].slice(0, MAX_IMAGES))
         
-        const savings = Math.round((1 - totalCompressedKB / totalOriginalKB) * 100)
         toast({
-          title: `เพิ่ม ${newImages.length} รูปภาพสำเร็จ ✨`,
-          description: `${totalOriginalKB}KB → ${totalCompressedKB}KB (ลดลง ${savings}%)`,
+          title: `อัปโหลด ${uploadCount} รูปภาพสำเร็จ ✨`,
+          description: `รูปภาพถูกบันทึกไปยัง Cloudinary CDN`,
         })
       }
     } catch (error) {

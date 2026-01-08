@@ -10,9 +10,9 @@ const nextConfig = {
     removeConsole: process.env.NODE_ENV === 'production',
   },
   
-  // Image optimization - allow base64 data URLs
+  // Image optimization - support Cloudinary CDN and legacy base64
   images: {
-    // Base64 images ต้อง unoptimized เพราะ Next.js ไม่รองรับ data URLs โดยตรง
+    // Keep unoptimized for backward compatibility with old Base64 images
     unoptimized: true,
     // กำหนด domains ที่อนุญาตสำหรับ external images
     remotePatterns: [
@@ -20,8 +20,13 @@ const nextConfig = {
         protocol: 'https',
         hostname: '**.firebasestorage.app',
       },
+      {
+        protocol: 'https',
+        hostname: 'res.cloudinary.com',
+      },
     ],
   },
+
   
   // Experimental features for better performance
   experimental: {
