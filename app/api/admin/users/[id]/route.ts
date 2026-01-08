@@ -5,8 +5,7 @@
  */
 
 import { NextRequest } from 'next/server'
-import { doc, getDoc, updateDoc, collection, query, where, getDocs } from 'firebase/firestore'
-import { getFirebaseDb } from '@/lib/firebase'
+import { getAdminDb } from '@/lib/firebase-admin'
 import {
   verifyAdminAccess,
   successResponse,
@@ -24,13 +23,12 @@ export async function GET(
 
   try {
     const { id } = await params
-    const db = getFirebaseDb()
+    const db = getAdminDb()
     
     // Get user
-    const userRef = doc(db, 'users', id)
-    const userSnap = await getDoc(userRef)
+    const userSnap = await db.collection('users').doc(id).get()
     
-    if (!userSnap.exists()) {
+    if (!userSnap.exists) {
       return errorResponse(
         AdminErrorCode.NOT_FOUND,
         'User not found',
@@ -41,24 +39,15 @@ export async function GET(
     const userData = { id: userSnap.id, ...userSnap.data() }
 
     // Get user's items
-    const itemsQuery = query(collection(db, 'items'), where('postedBy', '==', id))
-    const itemsSnap = await getDocs(itemsQuery)
+    const itemsSnap = await db.collection('items').where('postedBy', '==', id).get()
     const items = itemsSnap.docs.map(doc => ({ id: doc.id, ...doc.data() }))
 
     // Get user's exchanges
-    const exchangesQuery = query(
-      collection(db, 'exchanges'),
-      where('ownerId', '==', id)
-    )
-    const exchangesSnap = await getDocs(exchangesQuery)
+    const exchangesSnap = await db.collection('exchanges').where('ownerId', '==', id).get()
     const exchanges = exchangesSnap.docs.map(doc => ({ id: doc.id, ...doc.data() } as { id: string; status?: string }))
 
     // Get reports about this user
-    const reportsQuery = query(
-      collection(db, 'reports'),
-      where('reportedUserId', '==', id)
-    )
-    const reportsSnap = await getDocs(reportsQuery)
+    const reportsSnap = await db.collection('reports').where('reportedUserId', '==', id).get()
     const reports = reportsSnap.docs.map(doc => ({ id: doc.id, ...doc.data() }))
 
     return successResponse({
@@ -93,10 +82,9 @@ export async function PATCH(
   try {
     const { id } = await params
     const body = await request.json()
-    const db = getFirebaseDb()
+    const db = getAdminDb()
     
-    const userRef = doc(db, 'users', id)
-    await updateDoc(userRef, body)
+    await db.collection('users').doc(id).update(body)
 
     return successResponse({ success: true })
   } catch (error) {

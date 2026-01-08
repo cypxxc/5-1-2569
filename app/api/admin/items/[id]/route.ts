@@ -5,8 +5,7 @@
  */
 
 import { NextRequest } from 'next/server'
-import { doc, getDoc, deleteDoc } from 'firebase/firestore'
-import { getFirebaseDb } from '@/lib/firebase'
+import { getAdminDb } from '@/lib/firebase-admin'
 import {
   verifyAdminAccess,
   successResponse,
@@ -24,12 +23,11 @@ export async function GET(
 
   try {
     const { id } = await params
-    const db = getFirebaseDb()
+    const db = getAdminDb()
     
-    const itemRef = doc(db, 'items', id)
-    const itemSnap = await getDoc(itemRef)
+    const itemSnap = await db.collection('items').doc(id).get()
     
-    if (!itemSnap.exists()) {
+    if (!itemSnap.exists) {
       return errorResponse(
         AdminErrorCode.NOT_FOUND,
         'Item not found',
@@ -60,10 +58,9 @@ export async function DELETE(
 
   try {
     const { id } = await params
-    const db = getFirebaseDb()
+    const db = getAdminDb()
     
-    const itemRef = doc(db, 'items', id)
-    await deleteDoc(itemRef)
+    await db.collection('items').doc(id).delete()
 
     return successResponse({ success: true })
   } catch (error) {

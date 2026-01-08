@@ -4,15 +4,8 @@
  */
 
 import { NextRequest, NextResponse } from "next/server"
-import { 
-  doc, 
-  getDoc, 
-  updateDoc, 
-  deleteDoc,
-  serverTimestamp,
-  Timestamp
-} from "firebase/firestore"
-import { getFirebaseDb } from "@/lib/firebase"
+import { getAdminDb } from "@/lib/firebase-admin"
+import { FieldValue, Timestamp } from "firebase-admin/firestore"
 import { sendLinkSuccessMessage } from "@/lib/line"
 
 interface LinkRequestBody {
@@ -32,34 +25,28 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    const db = getFirebaseDb()
+    const db = getAdminDb()
 
     // Search through pendingLineLinks for matching code
+    const pendingLinksSnapshot = await db.collection("pendingLineLinks")
+      .where("linkCode", "==", linkCode)
+      .get()
     
-    // Search through pendingLineLinks for matching code
-    const { collection: firestoreCollection, query, where, getDocs } = await import("firebase/firestore")
-    const pendingLinksQuery = query(
-      firestoreCollection(db, "pendingLineLinks"),
-      where("linkCode", "==", linkCode)
-    )
-    
-    const snapshot = await getDocs(pendingLinksQuery)
-    
-    if (snapshot.empty) {
+    if (pendingLinksSnapshot.empty) {
       return NextResponse.json(
         { error: "รหัสไม่ถูกต้องหรือหมดอายุแล้ว" },
         { status: 400 }
       )
     }
 
-    const pendingLink = snapshot.docs[0]!
+    const pendingLink = pendingLinksSnapshot.docs[0]!
     const pendingData = pendingLink.data()
 
     // Check if code is expired
     const expiresAt = pendingData.expiresAt as Timestamp
     if (expiresAt.toDate() < new Date()) {
       // Delete expired link
-      await deleteDoc(pendingLink.ref)
+      await pendingLink.ref.delete()
       return NextResponse.json(
         { error: "รหัสหมดอายุแล้ว กรุณาขอรหัสใหม่" },
         { status: 400 }
@@ -69,24 +56,22 @@ export async function POST(request: NextRequest) {
     const lineUserId = pendingData.lineUserId
 
     // Update user document with LINE User ID
-    const userRef = doc(db, "users", userId)
-    const userDoc = await getDoc(userRef)
+    const userRef = db.collection("users").doc(userId)
+    const userDoc = await userRef.get()
 
-    if (!userDoc.exists()) {
+    if (!userDoc.exists) {
       return NextResponse.json(
         { error: "User not found" },
         { status: 404 }
       )
     }
 
-    const userData = userDoc.data()
+    const userData = userDoc.data()!
 
     // Check if this LINE account is already linked to another user
-    const existingQuery = query(
-      firestoreCollection(db, "users"),
-      where("lineUserId", "==", lineUserId)
-    )
-    const existingSnapshot = await getDocs(existingQuery)
+    const existingSnapshot = await db.collection("users")
+      .where("lineUserId", "==", lineUserId)
+      .get()
     
     if (!existingSnapshot.empty && existingSnapshot.docs[0]!.id !== userId) {
       return NextResponse.json(
@@ -96,7 +81,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Link the account
-    await updateDoc(userRef, {
+    await userRef.update({
       lineUserId,
       lineLinkCode: null,
       lineLinkCodeExpires: null,
@@ -106,11 +91,11 @@ export async function POST(request: NextRequest) {
         exchangeStatus: true,
         exchangeComplete: true,
       },
-      updatedAt: serverTimestamp(),
+      updatedAt: FieldValue.serverTimestamp(),
     })
 
     // Delete the pending link
-    await deleteDoc(pendingLink.ref)
+    await pendingLink.ref.delete()
 
     // Send success message to LINE
     await sendLinkSuccessMessage(lineUserId, userData.displayName || userData.email || "คุณ")
@@ -141,18 +126,17 @@ export async function GET(request: NextRequest) {
       )
     }
 
-    const db = getFirebaseDb()
-    const userRef = doc(db, "users", userId)
-    const userDoc = await getDoc(userRef)
+    const db = getAdminDb()
+    const userDoc = await db.collection("users").doc(userId).get()
 
-    if (!userDoc.exists()) {
+    if (!userDoc.exists) {
       return NextResponse.json(
         { error: "User not found" },
         { status: 404 }
       )
     }
 
-    const userData = userDoc.data()
+    const userData = userDoc.data()!
 
     return NextResponse.json({
       isLinked: !!userData.lineUserId,
@@ -185,20 +169,20 @@ export async function PATCH(request: NextRequest) {
       )
     }
 
-    const db = getFirebaseDb()
-    const userRef = doc(db, "users", userId)
-    const userDoc = await getDoc(userRef)
+    const db = getAdminDb()
+    const userRef = db.collection("users").doc(userId)
+    const userDoc = await userRef.get()
 
-    if (!userDoc.exists()) {
+    if (!userDoc.exists) {
       return NextResponse.json(
         { error: "User not found" },
         { status: 404 }
       )
     }
 
-    await updateDoc(userRef, {
+    await userRef.update({
       lineNotifications: settings,
-      updatedAt: serverTimestamp(),
+      updatedAt: FieldValue.serverTimestamp(),
     })
 
     return NextResponse.json({

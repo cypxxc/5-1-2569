@@ -5,8 +5,7 @@
  */
 
 import { NextRequest } from 'next/server'
-import { doc, getDoc, updateDoc } from 'firebase/firestore'
-import { getFirebaseDb } from '@/lib/firebase'
+import { getAdminDb } from '@/lib/firebase-admin'
 import {
   verifyAdminAccess,
   successResponse,
@@ -24,12 +23,11 @@ export async function GET(
 
   try {
     const { id } = await params
-    const db = getFirebaseDb()
+    const db = getAdminDb()
     
-    const reportRef = doc(db, 'reports', id)
-    const reportSnap = await getDoc(reportRef)
+    const reportSnap = await db.collection('reports').doc(id).get()
     
-    if (!reportSnap.exists()) {
+    if (!reportSnap.exists) {
       return errorResponse(
         AdminErrorCode.NOT_FOUND,
         'Report not found',
@@ -61,10 +59,9 @@ export async function PATCH(
   try {
     const { id } = await params
     const body = await request.json()
-    const db = getFirebaseDb()
+    const db = getAdminDb()
     
-    const reportRef = doc(db, 'reports', id)
-    await updateDoc(reportRef, body)
+    await db.collection('reports').doc(id).update(body)
 
     return successResponse({ success: true })
   } catch (error) {

@@ -4,15 +4,8 @@
  */
 
 import { NextRequest, NextResponse } from "next/server"
-import {
-  collection,
-  addDoc,
-  serverTimestamp,
-  getDocs,
-  query,
-  where,
-} from "firebase/firestore"
-import { getFirebaseDb } from "@/lib/firebase"
+import { getAdminDb } from "@/lib/firebase-admin"
+import { FieldValue } from "firebase-admin/firestore"
 import { notifyAdminsNewSupportTicket } from "@/lib/line"
 import type { SupportTicket, User } from "@/types"
 
@@ -40,7 +33,7 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    const db = getFirebaseDb()
+    const db = getAdminDb()
 
     // Create ticket document
     const ticketData = {
@@ -51,34 +44,32 @@ export async function POST(request: NextRequest) {
       userEmail: userEmail || "",
       status: "new" as const,
       priority: 2, // Default medium priority
-      createdAt: serverTimestamp(),
-      updatedAt: serverTimestamp(),
+      createdAt: FieldValue.serverTimestamp(),
+      updatedAt: FieldValue.serverTimestamp(),
     }
 
-    const docRef = await addDoc(collection(db, "support_tickets"), ticketData)
+    const docRef = await db.collection("support_tickets").add(ticketData)
     console.log("[Support API] Created ticket:", docRef.id)
 
     // Create in-app notifications for admins
-    const adminsSnapshot = await getDocs(collection(db, "admins"))
+    const adminsSnapshot = await db.collection("admins").get()
     
     for (const adminDoc of adminsSnapshot.docs) {
       const adminData = adminDoc.data()
-      const usersQuery = query(
-        collection(db, "users"),
-        where("email", "==", adminData.email)
-      )
-      const usersSnapshot = await getDocs(usersQuery)
+      const usersSnapshot = await db.collection("users")
+        .where("email", "==", adminData.email)
+        .get()
 
       if (!usersSnapshot.empty && usersSnapshot.docs[0]) {
         const adminUserId = usersSnapshot.docs[0].data().uid
-        await addDoc(collection(db, "notifications"), {
+        await db.collection("notifications").add({
           userId: adminUserId,
           title: "📩 Support Ticket ใหม่",
           message: `"${subject}" จาก ${userEmail}`,
           type: "support",
           relatedId: docRef.id,
           isRead: false,
-          createdAt: serverTimestamp(),
+          createdAt: FieldValue.serverTimestamp(),
         })
       }
     }
@@ -112,8 +103,8 @@ export async function POST(request: NextRequest) {
 }
 
 // Helper function to get admin LINE User IDs
-async function getAdminLineUserIds(db: any): Promise<string[]> {
-  const adminsSnapshot = await getDocs(collection(db, "admins"))
+async function getAdminLineUserIds(db: FirebaseFirestore.Firestore): Promise<string[]> {
+  const adminsSnapshot = await db.collection("admins").get()
   const adminEmails = adminsSnapshot.docs.map(doc => doc.data().email)
 
   if (adminEmails.length === 0) {
@@ -123,11 +114,9 @@ async function getAdminLineUserIds(db: any): Promise<string[]> {
   const lineUserIds: string[] = []
 
   for (const email of adminEmails) {
-    const usersQuery = query(
-      collection(db, "users"),
-      where("email", "==", email)
-    )
-    const usersSnapshot = await getDocs(usersQuery)
+    const usersSnapshot = await db.collection("users")
+      .where("email", "==", email)
+      .get()
 
     if (!usersSnapshot.empty) {
       const userData = usersSnapshot.docs[0]!.data() as User

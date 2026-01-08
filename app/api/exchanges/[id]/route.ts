@@ -4,15 +4,8 @@
  */
 
 import { NextRequest, NextResponse } from "next/server"
-import {
-  doc,
-  getDoc,
-  updateDoc,
-  serverTimestamp,
-  addDoc,
-  collection,
-} from "firebase/firestore"
-import { getFirebaseDb } from "@/lib/firebase"
+import { getAdminDb } from "@/lib/firebase-admin"
+import { FieldValue } from "firebase-admin/firestore"
 import { notifyExchangeStatusChange, notifyExchangeCompleted } from "@/lib/line"
 import type { Exchange, ExchangeStatus, User } from "@/types"
 
@@ -40,11 +33,11 @@ export async function PATCH(
       )
     }
 
-    const db = getFirebaseDb()
-    const exchangeRef = doc(db, "exchanges", exchangeId)
-    const exchangeDoc = await getDoc(exchangeRef)
+    const db = getAdminDb()
+    const exchangeRef = db.collection("exchanges").doc(exchangeId)
+    const exchangeDoc = await exchangeRef.get()
 
-    if (!exchangeDoc.exists()) {
+    if (!exchangeDoc.exists) {
       return NextResponse.json(
         { error: "Exchange not found" },
         { status: 404 }
@@ -57,17 +50,17 @@ export async function PATCH(
     // Build update object
     const updateData: Record<string, any> = {
       status,
-      updatedAt: serverTimestamp(),
+      updatedAt: FieldValue.serverTimestamp(),
     }
 
     if (status === "cancelled" && reason) {
       updateData.cancelReason = reason
       updateData.cancelledBy = userId
-      updateData.cancelledAt = serverTimestamp()
+      updateData.cancelledAt = FieldValue.serverTimestamp()
     }
 
     // Update exchange
-    await updateDoc(exchangeRef, updateData)
+    await exchangeRef.update(updateData)
 
     console.log(`[Exchange Status] ${exchangeId}: ${previousStatus} → ${status}`)
 
@@ -103,36 +96,35 @@ export async function PATCH(
     }
 
     if (notificationTitle) {
-      await addDoc(collection(db, "notifications"), {
+      await db.collection("notifications").add({
         userId: targetUserId,
         title: notificationTitle,
         message: notificationMessage,
         type: "exchange",
         relatedId: exchangeId,
         isRead: false,
-        createdAt: serverTimestamp(),
+        createdAt: FieldValue.serverTimestamp(),
       })
 
       // For completed status, notify both parties
       if (status === "completed") {
-        await addDoc(collection(db, "notifications"), {
+        await db.collection("notifications").add({
           userId: exchangeData.ownerId,
           title: notificationTitle,
           message: notificationMessage,
           type: "exchange",
           relatedId: exchangeId,
           isRead: false,
-          createdAt: serverTimestamp(),
+          createdAt: FieldValue.serverTimestamp(),
         })
       }
     }
 
     // ============ LINE Notifications ============
     // Get target user's LINE settings
-    const targetUserRef = doc(db, "users", targetUserId)
-    const targetUserDoc = await getDoc(targetUserRef)
+    const targetUserDoc = await db.collection("users").doc(targetUserId).get()
 
-    if (targetUserDoc.exists()) {
+    if (targetUserDoc.exists) {
       const targetUserData = targetUserDoc.data() as User
 
       if (
@@ -149,10 +141,9 @@ export async function PATCH(
 
           // Also notify the other party (owner) if they have LINE enabled
           if (status === "completed") {
-            const ownerRef = doc(db, "users", exchangeData.ownerId)
-            const ownerDoc = await getDoc(ownerRef)
+            const ownerDoc = await db.collection("users").doc(exchangeData.ownerId).get()
             
-            if (ownerDoc.exists()) {
+            if (ownerDoc.exists) {
               const ownerData = ownerDoc.data() as User
               if (
                 ownerData.lineUserId &&
@@ -207,11 +198,10 @@ export async function GET(
       )
     }
 
-    const db = getFirebaseDb()
-    const exchangeRef = doc(db, "exchanges", exchangeId)
-    const exchangeDoc = await getDoc(exchangeRef)
+    const db = getAdminDb()
+    const exchangeDoc = await db.collection("exchanges").doc(exchangeId).get()
 
-    if (!exchangeDoc.exists()) {
+    if (!exchangeDoc.exists) {
       return NextResponse.json(
         { error: "Exchange not found" },
         { status: 404 }

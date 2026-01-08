@@ -4,8 +4,7 @@
  */
 
 import { NextRequest } from 'next/server'
-import { collection, getDocs } from 'firebase/firestore'
-import { getFirebaseDb } from '@/lib/firebase'
+import { getAdminDb } from '@/lib/firebase-admin'
 import {
   verifyAdminAccess,
   successResponse,
@@ -19,19 +18,19 @@ export async function GET(request: NextRequest) {
   if (!authorized) return error!
 
   try {
-    const db = getFirebaseDb()
+    const db = getAdminDb()
     
     // Get current date ranges
     const now = new Date()
     const lastMonth = new Date(now.getFullYear(), now.getMonth() - 1, now.getDate())
     const twoMonthsAgo = new Date(now.getFullYear(), now.getMonth() - 2, now.getDate())
 
-    // Fetch all collections
+    // Fetch all collections using Admin SDK syntax
     const [usersSnap, itemsSnap, reportsSnap, exchangesSnap] = await Promise.all([
-      getDocs(collection(db, 'users')),
-      getDocs(collection(db, 'items')),
-      getDocs(collection(db, 'reports')),
-      getDocs(collection(db, 'exchanges')),
+      db.collection('users').get(),
+      db.collection('items').get(),
+      db.collection('reports').get(),
+      db.collection('exchanges').get(),
     ])
 
     // Calculate user stats

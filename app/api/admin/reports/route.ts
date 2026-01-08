@@ -4,8 +4,7 @@
  */
 
 import { NextRequest } from 'next/server'
-import { collection, getDocs, query, where, orderBy, limit } from 'firebase/firestore'
-import { getFirebaseDb } from '@/lib/firebase'
+import { getAdminDb } from '@/lib/firebase-admin'
 import {
   verifyAdminAccess,
   successResponse,
@@ -23,24 +22,22 @@ export async function GET(request: NextRequest) {
   try {
     const pagination = parsePaginationParams(request)
     const filters = parseFilterParams(request)
-    const db = getFirebaseDb()
+    const db = getAdminDb()
 
-    // Build query
-    let q = query(
-      collection(db, 'reports'),
-      orderBy(pagination.sortBy, pagination.sortOrder),
-      limit(pagination.limit)
-    )
+    // Build query using Admin SDK syntax
+    let q: FirebaseFirestore.Query = db.collection('reports')
+      .orderBy(pagination.sortBy, pagination.sortOrder)
+      .limit(pagination.limit)
 
     // Apply filters
     if (filters.status) {
-      q = query(q, where('status', '==', filters.status))
+      q = q.where('status', '==', filters.status)
     }
     if (filters.type) {
-      q = query(q, where('reportType', '==', filters.type))
+      q = q.where('reportType', '==', filters.type)
     }
 
-    const snapshot = await getDocs(q)
+    const snapshot = await q.get()
     const reports = snapshot.docs.map(doc => ({
       id: doc.id,
       ...doc.data(),

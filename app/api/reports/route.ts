@@ -4,15 +4,8 @@
  */
 
 import { NextRequest, NextResponse } from "next/server"
-import {
-  collection,
-  addDoc,
-  serverTimestamp,
-  getDocs,
-  query,
-  where,
-} from "firebase/firestore"
-import { getFirebaseDb } from "@/lib/firebase"
+import { getAdminDb } from "@/lib/firebase-admin"
+import { FieldValue } from "firebase-admin/firestore"
 import { notifyAdminsNewReport } from "@/lib/line"
 import type { Report, User } from "@/types"
 
@@ -62,7 +55,7 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    const db = getFirebaseDb()
+    const db = getAdminDb()
 
     // Create report document
     const reportData = {
@@ -78,35 +71,33 @@ export async function POST(request: NextRequest) {
       reportedUserEmail: reportedUserEmail || "",
       ...optionalFields,
       status: "new" as const,
-      createdAt: serverTimestamp(),
-      updatedAt: serverTimestamp(),
+      createdAt: FieldValue.serverTimestamp(),
+      updatedAt: FieldValue.serverTimestamp(),
     }
 
-    const docRef = await addDoc(collection(db, "reports"), reportData)
+    const docRef = await db.collection("reports").add(reportData)
     console.log("[Report API] Created report:", docRef.id)
 
     // Create in-app notifications for admins
-    const adminsSnapshot = await getDocs(collection(db, "admins"))
+    const adminsSnapshot = await db.collection("admins").get()
     
     for (const adminDoc of adminsSnapshot.docs) {
       const adminData = adminDoc.data()
       // Get admin user ID from users collection by email
-      const usersQuery = query(
-        collection(db, "users"),
-        where("email", "==", adminData.email)
-      )
-      const usersSnapshot = await getDocs(usersQuery)
+      const usersSnapshot = await db.collection("users")
+        .where("email", "==", adminData.email)
+        .get()
 
       if (!usersSnapshot.empty && usersSnapshot.docs[0]) {
         const adminUserId = usersSnapshot.docs[0].data().uid
-        await addDoc(collection(db, "notifications"), {
+        await db.collection("notifications").add({
           userId: adminUserId,
           title: "🚨 มีรายงานใหม่",
           message: `${getReportTypeLabel(reportType)}: "${targetTitle || targetId}"`,
           type: "report",
           relatedId: docRef.id,
           isRead: false,
-          createdAt: serverTimestamp(),
+          createdAt: FieldValue.serverTimestamp(),
         })
       }
     }
@@ -140,8 +131,8 @@ export async function POST(request: NextRequest) {
 }
 
 // Helper function to get admin LINE User IDs
-async function getAdminLineUserIds(db: any): Promise<string[]> {
-  const adminsSnapshot = await getDocs(collection(db, "admins"))
+async function getAdminLineUserIds(db: FirebaseFirestore.Firestore): Promise<string[]> {
+  const adminsSnapshot = await db.collection("admins").get()
   const adminEmails = adminsSnapshot.docs.map(doc => doc.data().email)
 
   if (adminEmails.length === 0) {
@@ -151,11 +142,9 @@ async function getAdminLineUserIds(db: any): Promise<string[]> {
   const lineUserIds: string[] = []
 
   for (const email of adminEmails) {
-    const usersQuery = query(
-      collection(db, "users"),
-      where("email", "==", email)
-    )
-    const usersSnapshot = await getDocs(usersQuery)
+    const usersSnapshot = await db.collection("users")
+      .where("email", "==", email)
+      .get()
 
     if (!usersSnapshot.empty) {
       const userData = usersSnapshot.docs[0]!.data() as User
