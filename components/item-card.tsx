@@ -87,20 +87,20 @@ export const ItemCard = memo(function ItemCard({ item, showRequestButton: _showR
         <div className="flex items-start justify-between gap-2">
           <div className="flex-1 min-w-0">
             <h3 className="font-semibold text-base line-clamp-1 group-hover:text-primary transition-colors">
-              {item.title}
+              {item.title || "ไม่มีชื่อเรื่อง"}
             </h3>
           </div>
           <Badge
             variant="outline"
-            className={`shrink-0 text-xs font-medium ${statusColors[item.status]}`}
+            className={`shrink-0 text-xs font-medium ${statusColors[item.status] || "bg-muted text-muted-foreground border-border"}`}
           >
-            {statusLabels[item.status]}
+            {statusLabels[item.status] || "ไม่ทราบสถานะ"}
           </Badge>
         </div>
 
         {/* Description */}
         <p className="text-sm text-muted-foreground line-clamp-2 leading-relaxed">
-          {item.description}
+          {item.description || "ไม่มีรายละเอียด"}
         </p>
 
         {/* Metadata */}

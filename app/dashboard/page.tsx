@@ -1,6 +1,6 @@
 "use client"
 
-import { useEffect, useState, useCallback } from "react"
+import { useEffect, useState, useCallback, useRef } from "react"
 import { getItems } from "@/lib/firestore"
 import type { Item, ItemCategory, ItemStatus } from "@/types"
 import { ItemCard } from "@/components/item-card"
@@ -29,7 +29,7 @@ export default function DashboardPage() {
   const [items, setItems] = useState<Item[]>([])
   const [loading, setLoading] = useState(true)
   const [category, setCategory] = useState<ItemCategory | "all">("all")
-  const [status, setStatus] = useState<ItemStatus | "all">("available")
+  const [status, setStatus] = useState<ItemStatus | "all">("all")
   const [searchQuery, setSearchQuery] = useState("")
   const [debouncedSearchQuery, setDebouncedSearchQuery] = useState("")
   const { user } = useAuth()
@@ -38,7 +38,7 @@ export default function DashboardPage() {
   // Infinite scroll states
   const [loadingMore, setLoadingMore] = useState(false)
   const [hasMore, setHasMore] = useState(true)
-  const [lastDoc, setLastDoc] = useState<any>(null)
+  const lastDocRef = useRef<any>(null)
   const { ref, inView } = useInView()
 
   // Debounce search query
@@ -60,23 +60,22 @@ export default function DashboardPage() {
       if (isInitial) {
         setLoading(true)
         setItems([])
-        setLastDoc(null)
+        lastDocRef.current = null
         setHasMore(true)
       } else {
         setLoadingMore(true)
       }
 
       const filters: { category?: ItemCategory; status?: ItemStatus; searchQuery?: string; lastDoc?: any; pageSize?: number } = {
-        pageSize: 12, // Define a page size for infinite scroll
+        pageSize: 12,
       }
       if (category !== "all") filters.category = category
       if (status !== "all") filters.status = status
       if (debouncedSearchQuery.trim()) filters.searchQuery = debouncedSearchQuery.trim()
-      if (!isInitial && lastDoc) filters.lastDoc = lastDoc
+      if (!isInitial && lastDocRef.current) filters.lastDoc = lastDocRef.current
 
       const result = await getItems(filters)
       
-      // Handle ApiResponse format
       if (result.success && result.data) {
         const newItems = result.data.items
         if (isInitial) {
@@ -84,7 +83,7 @@ export default function DashboardPage() {
         } else {
           setItems(prev => [...prev, ...newItems])
         }
-        setLastDoc(result.data.lastDoc)
+        lastDocRef.current = result.data.lastDoc
         setHasMore(result.data.hasMore)
       } else {
         console.error('[Dashboard] Error:', result.error)
@@ -101,12 +100,12 @@ export default function DashboardPage() {
       setLoading(false)
       setLoadingMore(false)
     }
-  }, [category, status, debouncedSearchQuery, lastDoc])
+  }, [category, status, debouncedSearchQuery]) // lastDoc removed from dependency
 
   // Initial load and reload on filter/search change
   useEffect(() => {
     loadItems(true)
-  }, [loadItems])
+  }, [category, status, debouncedSearchQuery]) // Removed loadItems from dependencies
 
   // Load more items when inView and conditions met
   useEffect(() => {
