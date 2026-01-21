@@ -103,8 +103,10 @@ test.describe('Landing Page Content', () => {
     // Click on login link
     const loginLink = page.locator('a[href*="login"]').first()
     if (await loginLink.isVisible()) {
-      await loginLink.click({ force: true })
-      await expect(page).toHaveURL(/\/login/, { timeout: 15000 })
+      await Promise.all([
+        page.waitForURL(/\/login/, { timeout: 15000 }),
+        loginLink.click({ force: true })
+      ])
     }
   })
 
@@ -115,8 +117,10 @@ test.describe('Landing Page Content', () => {
     // Click on register link
     const registerLink = page.locator('a[href*="register"]').first()
     if (await registerLink.isVisible()) {
-      await registerLink.click({ force: true })
-      await expect(page).toHaveURL(/\/register/, { timeout: 15000 })
+      await Promise.all([
+        page.waitForURL(/\/register/, { timeout: 15000 }),
+        registerLink.click({ force: true })
+      ])
     }
   })
 })
