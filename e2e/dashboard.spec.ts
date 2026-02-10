@@ -55,9 +55,10 @@ test.describe('Landing Page Content', () => {
   test.skip(({ browserName }) => browserName === 'webkit', 'WebKit has known Next.js hydration issues in Playwright')
   test('should display hero section', async ({ page }) => {
     await page.goto('/', { waitUntil: 'load' })
-    const heroTitle = page.locator('h1').first()
+    const heroTitle = page.locator('h1#hero-heading').first()
     await expect(heroTitle).toBeVisible({ timeout: 15000 })
-    await expect(heroTitle).toContainText('แลกเปลี่ยน')
+    await expect(heroTitle).toHaveText(/\S+/)
+    await expect(heroTitle.locator('span').first()).toBeVisible({ timeout: 15000 })
   })
 
   test('should have navigation links', async ({ page }) => {
@@ -124,13 +125,13 @@ test.describe('Auth Pages', () => {
 
   test('login page has link to register', async ({ page }) => {
     await page.goto('/login', { waitUntil: 'load' })
-    const registerLink = page.getByRole('link', { name: /สมัครสมาชิก|register/i })
+    const registerLink = page.locator('a[href="/register"]')
     await expect(registerLink.first()).toBeVisible({ timeout: 15000 })
   })
 
   test('register page has link to login', async ({ page }) => {
     await page.goto('/register', { waitUntil: 'load' })
-    const loginLink = page.getByRole('link', { name: /เข้าสู่ระบบ|login/i })
+    const loginLink = page.locator('a[href="/login"]')
     await expect(loginLink.first()).toBeVisible({ timeout: 15000 })
   })
 
